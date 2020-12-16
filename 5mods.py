@@ -7,6 +7,7 @@ from lxml import html
 
 GITHUB_EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
 GITHUB_EVENT_DATA = os.environ.get("GITHUB_EVENT_PATH", "")
+GITHUB_REF = os.environ.get("GITHUB_REF", "")  # Tag
 INPUT_USERNAME = os.environ.get("INPUT_USERNAME", "")
 INPUT_PASSWORD = os.environ.get("INPUT_PASSWORD", "")
 INPUT_MODTYPE = os.environ.get("INPUT_MODTYPE", "")
@@ -104,6 +105,22 @@ def main():
         print(f"Unable to get the Mod ID from the Mod Page")
         sys.exit(5)
     modid = rawmodid[0]
+
+    # Time to update the XCRF, again
+    update_csrf(session, mod)
+
+    # Now, is time to send the message to the 5mods page
+    message = data["release"]["body"]
+    cdata = {
+        "utf8": "✓",
+        "user_file[id]": modid,
+        "comment[comment]": f"{GITHUB_REF} Changelog: \n\n{message}",
+        "commit": "Post Comment"
+    }
+    comment = session.post(f"{DOMAIN}/api/comments", cdata)
+    if comment.status_code != 200:
+        print(f"Unable to Post the comment to 5mods: Code {comment.status_code}")
+        sys.exit(6)
 
 
 if __name__ == "__main__":
