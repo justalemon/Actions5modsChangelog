@@ -17,6 +17,29 @@ TYPES = ["tools", "vehicles", "paintjobs", "weapons", "scripts", "player", "maps
 DOMAIN = "https://www.gta5-mods.com"
 
 
+def update_csrf(session: requests.Session, response: requests.Response = None):
+    """
+    Updates the X-CSRF-Token header for the Session.
+    """
+    # If there is no response, request the main mod page
+    if response is None:
+        response = session.get(f"{DOMAIN}/{INPUT_MODTYPE}/{INPUT_MODNAME}")
+
+    # Make sure that the response was code 200
+    if response.status_code != 200:
+        print(f"Unable to update CSRF for URL {response.url}")
+        sys.exit(2)
+
+    # Parse the HTML and get the CSRF from meta
+    csrf = html.fromstring(response.text).xpath(XPATH_CSRF)
+    # If there is no csrf-token or is invalid, print a message and exit
+    if not csrf or not csrf[0]:
+        print(f"No csrf-token meta tag was found! (For URL {response.url})")
+        sys.exit(2)
+    # If there is, add it to the session tokens
+    session.headers["X-CSRF-Token"] = csrf[0]
+
+
 def checks():
     """
     Checks that all of the required variables are present and valid.
@@ -53,14 +76,7 @@ def main():
     session.headers["User-Agent"] = "Fangy (+https://github.com/justalemon/Fangy)"
     # Request the main page, for filling the cookies and fetch the csrf-token
     # (https://laravel.com/docs/8.x/csrf#csrf-x-csrf-token)
-    home = session.get(DOMAIN)
-    csrf = html.fromstring(home.text).xpath(XPATH_CSRF)
-    # If there is no csrf-token or is invalid, print a message and exit
-    if not csrf or not csrf[0]:
-        print("No csrf-token meta tag was found!")
-        sys.exit(2)
-    # If there is, add it to the session tokens
-    session.headers["X-CSRF-Token"] = csrf[0]
+    update_csrf(session, session.get(DOMAIN))
 
     # Now, go ahead and log into 5mods
     # The session should handle everything
