@@ -6,7 +6,11 @@ from lxml import html
 
 INPUT_USERNAME = os.environ.get("INPUT_USERNAME", "")
 INPUT_PASSWORD = os.environ.get("INPUT_PASSWORD", "")
-CSRF = "//meta[@name='csrf-token']/@content"
+INPUT_MODTYPE = os.environ.get("INPUT_MODTYPE", "")
+INPUT_MODNAME = os.environ.get("INPUT_MODNAME", "")
+XPATH_CSRF = "//meta[@name='csrf-token']/@content"
+XPATH_MODID = "//div[@id='file']/@data-user-file-id"
+TYPES = ["tools", "vehicles", "paintjobs", "weapons", "scripts", "player", "maps", "misc"]
 DOMAIN = "https://www.gta5-mods.com"
 
 
@@ -19,6 +23,12 @@ def check_variables():
         sys.exit(1)
     if not INPUT_PASSWORD or INPUT_PASSWORD.isspace():
         print("Password is not valid and/or only contains whitespaces.")
+        sys.exit(1)
+    if not INPUT_MODTYPE or INPUT_MODTYPE.isspace() or INPUT_MODTYPE not in TYPES:
+        print("Mod Type is not valid and/or only contains whitespaces.")
+        sys.exit(1)
+    if not INPUT_MODNAME or INPUT_MODNAME.isspace():
+        print("Mod Name is not valid and/or only contains whitespaces.")
         sys.exit(1)
 
 
@@ -33,7 +43,7 @@ def main():
     # Request the main page, for filling the cookies and fetch the csrf-token
     # (https://laravel.com/docs/8.x/csrf#csrf-x-csrf-token)
     home = session.get(DOMAIN)
-    csrf = html.fromstring(home.text).xpath(CSRF)
+    csrf = html.fromstring(home.text).xpath(XPATH_CSRF)
     # If there is no csrf-token or is invalid, print a message and exit
     if not csrf or not csrf[0]:
         print("No csrf-token meta tag was found!")
@@ -56,6 +66,18 @@ def main():
         json = login.json()
         print("Unable to Log In: " + json["errors"])
         sys.exit(3)
+
+    # Now, time to fetch the Numeric ID of the mod (required for posting comments)
+    # This is present on the body on the file id as data-user-file-id
+    mod = session.get(f"{DOMAIN}/{INPUT_MODTYPE}/{INPUT_MODNAME}")
+    if mod.status_code != 200:
+        print(f"Unable to fetch the Mod Page: Code {mod.status_code}")
+        sys.exit(4)
+    rawmodid = html.fromstring(mod.text).xpath(XPATH_MODID)
+    if not rawmodid:
+        print(f"Unable to get the Mod ID from the Mod Page")
+        sys.exit(5)
+    modid = rawmodid[0]
 
 
 if __name__ == "__main__":
