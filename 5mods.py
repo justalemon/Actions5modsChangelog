@@ -4,10 +4,22 @@ import sys
 import requests
 from lxml import html
 
-USERNAME = os.environ.get("INPUT_USERNAME")
-PASSWORD = os.environ.get("INPUT_PASSWORD")
+INPUT_USERNAME = os.environ.get("INPUT_USERNAME", "")
+INPUT_PASSWORD = os.environ.get("INPUT_PASSWORD", "")
 CSRF = "//meta[@name='csrf-token']/@content"
 DOMAIN = "https://www.gta5-mods.com"
+
+
+def check_variables():
+    """
+    Checks that all of the required variables are present.
+    """
+    if not INPUT_USERNAME or INPUT_USERNAME.isspace():
+        print("Username is not valid and/or only contains whitespaces.")
+        sys.exit(1)
+    if not INPUT_PASSWORD or INPUT_PASSWORD.isspace():
+        print("Password is not valid and/or only contains whitespaces.")
+        sys.exit(1)
 
 
 def main():
@@ -33,8 +45,8 @@ def main():
     # The session should handle everything
     login_data = {
         "utf8": "✓",
-        "user[username]": USERNAME,
-        "user[password]": PASSWORD,
+        "user[username]": INPUT_USERNAME,
+        "user[password]": INPUT_PASSWORD,
         "user[remember_me]": 1,
         "commit": "Log In"
     }
@@ -47,4 +59,5 @@ def main():
 
 
 if __name__ == "__main__":
+    check_variables()
     main()
