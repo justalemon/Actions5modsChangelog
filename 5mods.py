@@ -4,6 +4,7 @@ import sys
 import requests
 from lxml import html
 
+GITHUB_EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
 INPUT_USERNAME = os.environ.get("INPUT_USERNAME", "")
 INPUT_PASSWORD = os.environ.get("INPUT_PASSWORD", "")
 INPUT_MODTYPE = os.environ.get("INPUT_MODTYPE", "")
@@ -14,10 +15,14 @@ TYPES = ["tools", "vehicles", "paintjobs", "weapons", "scripts", "player", "maps
 DOMAIN = "https://www.gta5-mods.com"
 
 
-def check_variables():
+def checks():
     """
-    Checks that all of the required variables are present.
+    Checks that all of the required variables are present and valid.
     """
+    if GITHUB_EVENT != "release":
+        print("This action can only be triggered on Releases.")
+        sys.exit(1)
+
     if not INPUT_USERNAME or INPUT_USERNAME.isspace():
         print("Username is not valid and/or only contains whitespaces.")
         sys.exit(1)
@@ -81,5 +86,5 @@ def main():
 
 
 if __name__ == "__main__":
-    check_variables()
+    checks()
     main()
