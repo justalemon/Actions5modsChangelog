@@ -46,7 +46,6 @@ def main():
     # Read the GitHub Event Data for using it later
     with open(GITHUB_EVENT_DATA) as file:
         data = json.load(file)
-        print(data)
 
     # Make a session for storing the cookies
     # (kinda required for 5mods, due to how the site works)
