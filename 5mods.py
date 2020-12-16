@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -5,6 +6,7 @@ import requests
 from lxml import html
 
 GITHUB_EVENT = os.environ.get("GITHUB_EVENT_NAME", "")
+GITHUB_EVENT_DATA = os.environ.get("GITHUB_EVENT_PATH", "")
 INPUT_USERNAME = os.environ.get("INPUT_USERNAME", "")
 INPUT_PASSWORD = os.environ.get("INPUT_PASSWORD", "")
 INPUT_MODTYPE = os.environ.get("INPUT_MODTYPE", "")
@@ -41,6 +43,11 @@ def main():
     """
     Sends the changelog message to 5mods.
     """
+    # Read the GitHub Event Data for using it later
+    with open("test.json") as file:
+        data = json.load(file)
+        print(data)
+
     # Make a session for storing the cookies
     # (kinda required for 5mods, due to how the site works)
     session = requests.Session()
@@ -68,8 +75,7 @@ def main():
     login = session.post(f"{DOMAIN}/login", login_data)
     # If the code was other than 200, print the message and return
     if login.status_code != 200:
-        json = login.json()
-        print("Unable to Log In: " + json["errors"])
+        print("Unable to Log In: " + login.json()["errors"])
         sys.exit(3)
 
     # Now, time to fetch the Numeric ID of the mod (required for posting comments)
