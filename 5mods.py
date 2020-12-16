@@ -44,7 +44,7 @@ def main():
     Sends the changelog message to 5mods.
     """
     # Read the GitHub Event Data for using it later
-    with open("test.json") as file:
+    with open(GITHUB_EVENT_DATA) as file:
         data = json.load(file)
         print(data)
 
