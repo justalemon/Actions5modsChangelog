@@ -1,0 +1,29 @@
+name: "5mods Changelog Comment"
+description: "Posts a Comment on 5mods with the changelog of your GitHub Release."
+author: "justalemon"
+inputs:
+  username:
+    description: "Your User Name on 5mods."
+    required: true
+  password:
+    description: "Your password on 5mods."
+    required: true
+  modtype:
+    description: "The type of mod. This should be tools, vehicles, paintjobs, weapons, scripts, player or misc."
+    required: true
+  modname:
+    description: "The name of the mod from the URL, after the type. (example: lemonui for https://www.gta5-mods.com/tools/lemonui)"
+    required: true
+  pin:
+    description: "If the comment should be pinned."
+    required: false
+    default: true
+  feature:
+    description: "If the comment should be featured."
+    required: false
+    default: true
+runs:
+  using: "composite"
+  steps:
+    - run: "5mods.py"
+      shell: python
