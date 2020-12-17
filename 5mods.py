@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 
 import requests
@@ -12,8 +13,11 @@ INPUT_USERNAME = os.environ.get("INPUT_USERNAME", "")
 INPUT_PASSWORD = os.environ.get("INPUT_PASSWORD", "")
 INPUT_MODTYPE = os.environ.get("INPUT_MODTYPE", "")
 INPUT_MODNAME = os.environ.get("INPUT_MODNAME", "")
+INPUT_PIN = os.environ.get("INPUT_PIN", "true").lower() == "true"
+INPUT_FEATURE = os.environ.get("INPUT_FEATURE", "true").lower() == "true"
 XPATH_CSRF = "//meta[@name='csrf-token']/@content"
 XPATH_MODID = "//div[@id='file']/@data-user-file-id"
+REGEX_COMMENTID = "data-comment-id=\\\\\"([0-9]*)\\\\\""
 TYPES = ["tools", "vehicles", "paintjobs", "weapons", "scripts", "player", "maps", "misc"]
 DOMAIN = "https://www.gta5-mods.com"
 
@@ -106,7 +110,7 @@ def main():
         sys.exit(5)
     modid = rawmodid[0]
 
-    # Time to update the XCRF, again
+    # Time to update the CSRF, again
     update_csrf(session, mod)
 
     # Now, is time to send the message to the 5mods page
@@ -121,6 +125,44 @@ def main():
     if comment.status_code != 200:
         print(f"Unable to Post the comment to 5mods: Code {comment.status_code}")
         sys.exit(6)
+
+    # The Comment ID is sent as part of the response of the request above
+    # Because the site was made by someone in drugs, is JavaScript meant to be executed on the client browser
+    # So we need to use a RegEx to find the Comment ID in the entire JS Code
+    regex = re.search(REGEX_COMMENTID, comment.text)
+    commentid = int(regex.group(1))
+
+    # Now that the comment has been posted, time to pin and/or feature
+    # Let's start with the pin (required for featured)
+    if INPUT_PIN or INPUT_FEATURE:
+        data = {
+            "comment": {
+                "id": commentid
+            }
+        }
+        update_csrf(session)
+        pin = session.patch(f"{DOMAIN}/api/comments/pin", data,
+                            headers={"Content-Type": "application/json"})
+        print(session.cookies)
+        if pin.status_code != 200:
+            print(f"Unable to Pin Comment {commentid}: Code {pin.status_code} ({pin.text})")
+            sys.exit(7)
+    if INPUT_FEATURE:
+        data = {
+            "comment": {
+                "id": commentid,
+                "featured": True
+            }
+        }
+        update_csrf(session)
+        featured = session.patch(f"{DOMAIN}/api/comments/feature", data,
+                                 headers={"Content-Type": "application/json"})
+        if featured.status_code != 200:
+            print(f"Unable to Feature Comment {commentid}: Code {featured.status_code}")
+            sys.exit(8)
+
+    # If we got here, the nightmares have ended
+    print(f"Done! (Comment ID: {commentid})")
 
 
 if __name__ == "__main__":
