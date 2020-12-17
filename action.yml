@@ -25,5 +25,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: "5mods.py"
-      shell: python
+    - name: Set up Python 3.8.5
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8.5
+    - name: Install Requirements
+      run: python -m pip install -r ${{ github.action_path }}/requirements.txt
+    - name: Run Action
+      shell: bash
+      run: python ${{ github.action_path }/5mods.py
